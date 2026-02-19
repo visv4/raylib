@@ -364,6 +364,9 @@ typedef struct Mesh {
     // OpenGL identifiers
     unsigned int vaoId;     // OpenGL Vertex Array Object id
     unsigned int *vboId;    // OpenGL Vertex Buffer Objects id (default vertex data)
+
+    //USBX stuff
+    char name[64];
 } Mesh;
 
 // Shader
@@ -399,6 +402,14 @@ typedef struct BoneInfo {
     int parent;             // Bone parent
 } BoneInfo;
 
+typedef struct Empty {
+    Vector3 localPosition;
+    Quaternion localRotation;
+    char name[64];
+    int parentBoneIndex;
+    Matrix globalTransform;
+} Empty;
+
 // Model, meshes, materials and animation data
 typedef struct Model {
     Matrix transform;       // Local transform matrix
@@ -413,6 +424,12 @@ typedef struct Model {
     int boneCount;          // Number of bones
     BoneInfo *bones;        // Bones information (skeleton)
     Transform *bindPose;    // Bones base transformation (pose)
+
+    //USBX
+    int emptyCount;
+
+    Empty *empties;         
+
 } Model;
 
 // ModelAnimation
