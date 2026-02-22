@@ -5499,50 +5499,30 @@ static BoneInfo *LoadBoneInfoGLTF(cgltf_skin skin, int *boneCount)
     return bones;
 }
 
-void UpdateEmpties(Model *model, ModelAnimation anim, int frame)
+void UpdateEmpties(Model *model)
 {
-    if (!model || model->emptyCount == 0) return;
+    // Make sure the mesh actually has bones allocated!
+    if (!model || model->emptyCount == 0 || model->meshCount == 0) return;
 
     for (int i = 0; i < model->emptyCount; i++)
     {
         Empty *e = &model->empties[i];
+        int boneId = e->parentBoneIndex;
 
-        // 1. Correct Local Matrix Order: Translate * Rotate * Scale
-        // (Previously it was Rotate * Translate, which orbits the object around itself!)
-        Matrix emptyRot = QuaternionToMatrix(e->localRotation);
-        Matrix emptyTrans = MatrixTranslate(e->localPosition.x, e->localPosition.y, e->localPosition.z);
-        Matrix transform = MatrixMultiply(emptyTrans, emptyRot);
+        if (boneId == -1) continue; // Skip if not attached to a bone
 
-        int currentBone = e->parentBoneIndex;
+        // 1. Get Raylib's final rendering matrix for this specific bone
+        Matrix gpuMat = model->meshes[0].boneMatrices[boneId];
 
-        // Walk up the bone tree
-        while (currentBone != -1)
-        {
-            Transform bonePose = anim.framePoses[frame][currentBone];
+        // 2. Apply the animated bone to the Empty's original rest position
+        // (This moves the Empty from 'T-Pose' into the current animated frame)
+        Matrix animMat = MatrixMultiply(e->restTransform, gpuMat);
 
-            // 2. Correct Bone Matrix Order: Translate * Rotate * Scale
-            Matrix boneRot = QuaternionToMatrix(bonePose.rotation);
-            Matrix boneTrans = MatrixTranslate(bonePose.translation.x, bonePose.translation.y, bonePose.translation.z);
-            
-            // Add scale back in just to be safe, as armatures often have tiny scale artifacts
-            Matrix boneScale = MatrixScale(bonePose.scale.x, bonePose.scale.y, bonePose.scale.z);
-
-            // Combine them properly: T * (R * S)
-            Matrix boneMat = MatrixMultiply(boneRot, boneScale);
-            boneMat = MatrixMultiply(boneTrans, boneMat);
-
-            // 3. THE CRITICAL FIX: Parent * Child
-            // We must wrap the parent's space AROUND the current transform.
-            transform = MatrixMultiply(boneMat, transform); 
-
-            // Move to the next parent
-            currentBone = model->bones[currentBone].parent;
-        }
-
-        // Apply the base model transform (handles glTF 90-degree axis fixes)
-        e->globalTransform = MatrixMultiply(model->transform, transform);
+        // 3. Apply the base model transform to fix glTF 90-degree axis swizzles
+        e->globalTransform = MatrixMultiply(animMat, model->transform);
     }
 }
+
 static void LoadAttachments(Model *model, cgltf_node *node)
 {
     if (!model || !node)
@@ -5557,7 +5537,7 @@ static void LoadAttachments(Model *model, cgltf_node *node)
     char emptyExt[] = "_attachment";
     if (strlen(emptyExt) >= fullNameLen)
     {
-        TRACELOG(LOG_ERROR, "Not an attachment"); 
+        //TRACELOG(LOG_ERROR, "Not an attachment"); 
         nodeIsAttachment = 0;
     }
 
@@ -5578,16 +5558,16 @@ static void LoadAttachments(Model *model, cgltf_node *node)
 
         Empty e;
         sprintf_s(e.name, 63, "%s", node->name);
-        e.localPosition = (Vector3){ 0.0f, 0.0f, 0.0f };
-        if (node->has_translation) {
-            e.localPosition = (Vector3){ node->translation[0], node->translation[1], node->translation[2] };
-        }
+        
+        cgltf_float wt[16];
+        cgltf_node_transform_world(node, wt);
 
-        // THE MISSING PIECE: Extract the Blender socket rotation
-        e.localRotation = (Quaternion){ 0.0f, 0.0f, 0.0f, 1.0f }; 
-        if (node->has_rotation) {
-            e.localRotation = (Quaternion){ node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3] };
-        }
+        e.restTransform = (Matrix){
+            wt[0], wt[4], wt[8],  wt[12],
+            wt[1], wt[5], wt[9],  wt[13],
+            wt[2], wt[6], wt[10], wt[14],
+            wt[3], wt[7], wt[11], wt[15]
+        };
 
         model->emptyCount++;
 
