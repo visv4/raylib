@@ -5501,19 +5501,17 @@ static BoneInfo *LoadBoneInfoGLTF(cgltf_skin skin, int *boneCount)
 
 void UpdateEmpties(Model *model, ModelAnimation anim, int frame)
 {
-    if (!model || model->emptyCount == 0)
-        return;
+    if (!model || model->emptyCount == 0) return;
 
     for (int i = 0; i < model->emptyCount; i++)
     {
         Empty *e = &model->empties[i];
 
-        // WARNING: If your LoadAttachments function didn't read rotation, 
-        // e->localRotation MUST be initialized to {0.0f, 0.0f, 0.0f, 1.0f} (Identity)
-        // If it is {0,0,0,0}, this will output a broken matrix!
-        Matrix transform = MatrixMultiply(
-            QuaternionToMatrix(e->localRotation),
-            MatrixTranslate(e->localPosition.x, e->localPosition.y, e->localPosition.z));
+        // 1. Correct Local Matrix Order: Translate * Rotate * Scale
+        // (Previously it was Rotate * Translate, which orbits the object around itself!)
+        Matrix emptyRot = QuaternionToMatrix(e->localRotation);
+        Matrix emptyTrans = MatrixTranslate(e->localPosition.x, e->localPosition.y, e->localPosition.z);
+        Matrix transform = MatrixMultiply(emptyTrans, emptyRot);
 
         int currentBone = e->parentBoneIndex;
 
@@ -5522,29 +5520,29 @@ void UpdateEmpties(Model *model, ModelAnimation anim, int frame)
         {
             Transform bonePose = anim.framePoses[frame][currentBone];
 
-            // 1. Rebuild the full local bone matrix (Order: Scale -> Rot -> Trans)
-            Matrix boneScale = MatrixScale(bonePose.scale.x, bonePose.scale.y, bonePose.scale.z);
+            // 2. Correct Bone Matrix Order: Translate * Rotate * Scale
             Matrix boneRot = QuaternionToMatrix(bonePose.rotation);
             Matrix boneTrans = MatrixTranslate(bonePose.translation.x, bonePose.translation.y, bonePose.translation.z);
             
-            Matrix boneMat = MatrixMultiply(MatrixMultiply(boneScale, boneRot), boneTrans);
+            // Add scale back in just to be safe, as armatures often have tiny scale artifacts
+            Matrix boneScale = MatrixScale(bonePose.scale.x, bonePose.scale.y, bonePose.scale.z);
 
-            // 2. Accumulate the transformation (Child * Parent)
-            transform = MatrixMultiply(transform, boneMat);
+            // Combine them properly: T * (R * S)
+            Matrix boneMat = MatrixMultiply(boneRot, boneScale);
+            boneMat = MatrixMultiply(boneTrans, boneMat);
+
+            // 3. THE CRITICAL FIX: Parent * Child
+            // We must wrap the parent's space AROUND the current transform.
+            transform = MatrixMultiply(boneMat, transform); 
 
             // Move to the next parent
             currentBone = model->bones[currentBone].parent;
         }
 
-        // 3. THE MISSING LINK: Apply the model's base transform!
-        // This applies the 90-degree glTF axis correction and Armature object rotations.
-        //transform = MatrixMultiply(transform, model->transform);
-
-        // Save the final matrix.
-        e->globalTransform = transform;
+        // Apply the base model transform (handles glTF 90-degree axis fixes)
+        e->globalTransform = MatrixMultiply(model->transform, transform);
     }
 }
-
 static void LoadAttachments(Model *model, cgltf_node *node)
 {
     if (!model || !node)
@@ -5580,8 +5578,16 @@ static void LoadAttachments(Model *model, cgltf_node *node)
 
         Empty e;
         sprintf_s(e.name, 63, "%s", node->name);
-        e.localPosition = (Vector3){node->translation[0], node->translation[1], node->translation[2]};
-        e.localRotation = (Quaternion){node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]};
+        e.localPosition = (Vector3){ 0.0f, 0.0f, 0.0f };
+        if (node->has_translation) {
+            e.localPosition = (Vector3){ node->translation[0], node->translation[1], node->translation[2] };
+        }
+
+        // THE MISSING PIECE: Extract the Blender socket rotation
+        e.localRotation = (Quaternion){ 0.0f, 0.0f, 0.0f, 1.0f }; 
+        if (node->has_rotation) {
+            e.localRotation = (Quaternion){ node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3] };
+        }
 
         model->emptyCount++;
 
