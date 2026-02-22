@@ -5534,7 +5534,7 @@ static void LoadAttachments(Model *model, cgltf_node *node)
     int nodeIsAttachment = 1;
 
     int fullNameLen = strlen(node->name);
-    char emptyExt[] = "_attachment";
+    char emptyExt[] = "_ATTACHMENT";
     if (strlen(emptyExt) >= fullNameLen)
     {
         //TRACELOG(LOG_ERROR, "Not an attachment"); 
