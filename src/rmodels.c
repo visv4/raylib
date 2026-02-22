@@ -5508,7 +5508,9 @@ void UpdateEmpties(Model *model, ModelAnimation anim, int frame)
     {
         Empty *e = &model->empties[i];
 
-        // Start with the empty's local transform matrix
+        // WARNING: If your LoadAttachments function didn't read rotation, 
+        // e->localRotation MUST be initialized to {0.0f, 0.0f, 0.0f, 1.0f} (Identity)
+        // If it is {0,0,0,0}, this will output a broken matrix!
         Matrix transform = MatrixMultiply(
             QuaternionToMatrix(e->localRotation),
             MatrixTranslate(e->localPosition.x, e->localPosition.y, e->localPosition.z));
@@ -5518,26 +5520,27 @@ void UpdateEmpties(Model *model, ModelAnimation anim, int frame)
         // Walk up the bone tree
         while (currentBone != -1)
         {
-            // Get the animated transform of the current bone for this frame
             Transform bonePose = anim.framePoses[frame][currentBone];
 
-            Matrix boneMat = MatrixMultiply(
-                QuaternionToMatrix(bonePose.rotation),
-                MatrixTranslate(bonePose.translation.x, bonePose.translation.y, bonePose.translation.z));
+            // 1. Rebuild the full local bone matrix (Order: Scale -> Rot -> Trans)
+            Matrix boneScale = MatrixScale(bonePose.scale.x, bonePose.scale.y, bonePose.scale.z);
+            Matrix boneRot = QuaternionToMatrix(bonePose.rotation);
+            Matrix boneTrans = MatrixTranslate(bonePose.translation.x, bonePose.translation.y, bonePose.translation.z);
+            
+            Matrix boneMat = MatrixMultiply(MatrixMultiply(boneScale, boneRot), boneTrans);
 
-            // Add scale if your bones use scaling:
-            // Matrix scaleMat = MatrixScale(bonePose.scale.x, bonePose.scale.y, bonePose.scale.z);
-            // boneMat = MatrixMultiply(scaleMat, boneMat);
-
-            // Accumulate the transformation
+            // 2. Accumulate the transformation (Child * Parent)
             transform = MatrixMultiply(transform, boneMat);
 
             // Move to the next parent
             currentBone = model->bones[currentBone].parent;
         }
 
+        // 3. THE MISSING LINK: Apply the model's base transform!
+        // This applies the 90-degree glTF axis correction and Armature object rotations.
+        //transform = MatrixMultiply(transform, model->transform);
+
         // Save the final matrix.
-        // You can extract the global position from transform.m12, transform.m13, transform.m14
         e->globalTransform = transform;
     }
 }
