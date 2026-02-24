@@ -1241,6 +1241,9 @@ void UnloadModel(Model model)
     for (int i = 0; i < model.meshCount; i++)
         UnloadMesh(model.meshes[i]);
 
+    // Unload Empty
+    RL_FREE(model.empties);
+
     // Unload materials maps
     // NOTE: As the user could be sharing shaders and textures between models,
     // we don't unload the material but just free its maps,
@@ -5556,8 +5559,8 @@ static void LoadAttachments(Model *model, cgltf_node *node)
     {
         // add to model empties
 
-        Empty e;
-        sprintf_s(e.name, 63, "%s", node->name);
+        Empty e = {0};
+        strncpy(e.name, node->name, 63);
         
         cgltf_float wt[16];
         cgltf_node_transform_world(node, wt);
@@ -5570,15 +5573,13 @@ static void LoadAttachments(Model *model, cgltf_node *node)
         };
 
         model->emptyCount++;
+        Empty* empties = (Empty *)realloc(model->empties, sizeof(Empty) * model->emptyCount);
+        if (empties == NULL){
+            TraceLog(LOG_ERROR, "Couldn't allocate empties");
+            return;
+        }
 
-        if (model->empties == NULL)
-        {
-            model->empties = (Empty *)malloc(sizeof(Empty));
-        }
-        else
-        {
-            model->empties = (Empty *)realloc(model->empties, sizeof(Empty) * model->emptyCount);
-        }
+        model->empties = empties;
 
         e.parentBoneIndex = -1;
 
