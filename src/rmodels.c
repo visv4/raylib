@@ -2313,7 +2313,7 @@ Material LoadMaterialDefault(void)
     material.shader.locs = rlGetShaderLocsDefault();
 
     // Using rlgl default texture (1x1 pixel, UNCOMPRESSED_R8G8B8A8, 1 mipmap)
-    material.maps[MATERIAL_MAP_DIFFUSE].texture = (Texture2D){rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+    material.maps[MATERIAL_MAP_DIFFUSE].texture = (Texture2D){0};
     // material.maps[MATERIAL_MAP_NORMAL].texture;         // NOTE: By default, not set
     // material.maps[MATERIAL_MAP_SPECULAR].texture;       // NOTE: By default, not set
 
