@@ -5751,8 +5751,8 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                             {
                                 Color color = GetImageColor(imMetallicRoughness, x, y);
 
-                                ((unsigned char *)imRoughness.data)[y * imRoughness.width + x] = color.g * data->materials[i].pbr_metallic_roughness.roughness_factor; // Roughness color channel
-                                ((unsigned char *)imMetallic.data)[y * imMetallic.width + x] = color.b * data->materials[i].pbr_metallic_roughness.metallic_factor;   // Metallic color channel
+                                ((unsigned char *)imRoughness.data)[y * imRoughness.width + x] = color.g; // Roughness color channel
+                                ((unsigned char *)imMetallic.data)[y * imMetallic.width + x] = color.b;   // Metallic color channel
                             }
                         }
 
@@ -5809,6 +5809,7 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.g = (unsigned char)(data->materials[i].emissive_factor[1] * 255);
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.b = (unsigned char)(data->materials[i].emissive_factor[2] * 255);
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.a = 255;
+                    model.materials[j].maps[MATERIAL_MAP_EMISSION].value   = (unsigned char)(data->materials[i].emissive_strength); 
                 }
             }
 
