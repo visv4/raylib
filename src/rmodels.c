@@ -5809,7 +5809,7 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.g = (unsigned char)(data->materials[i].emissive_factor[1] * 255);
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.b = (unsigned char)(data->materials[i].emissive_factor[2] * 255);
                     model.materials[j].maps[MATERIAL_MAP_EMISSION].color.a = 255;
-                    model.materials[j].maps[MATERIAL_MAP_EMISSION].value   = (unsigned float)(data->materials[i].emissive_strength); 
+                    model.materials[j].maps[MATERIAL_MAP_EMISSION].value   = (float)(data->materials[i].emissive_strength.emissive_strength); 
                 }
             }
 
