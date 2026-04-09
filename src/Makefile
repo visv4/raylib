@@ -79,7 +79,7 @@ RAYLIB_SRC_PATH      ?= ../src
 RAYLIB_RELEASE_PATH  ?= $(RAYLIB_SRC_PATH)
 
 # Library type used for raylib: STATIC (.a) or SHARED (.so/.dll)
-RAYLIB_LIBTYPE       ?= SHARED
+RAYLIB_LIBTYPE       ?= STATIC
 
 # Build mode for library: DEBUG or RELEASE
 RAYLIB_BUILD_MODE    ?= RELEASE

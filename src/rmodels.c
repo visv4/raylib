@@ -5764,13 +5764,17 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                         UnloadImage(imMetallicRoughness);
                     }
 
-                    // Load metallic/roughness material properties
-                    float roughness = data->materials[i].pbr_metallic_roughness.roughness_factor;
-                    model.materials[j].maps[MATERIAL_MAP_ROUGHNESS].value = roughness;
-
-                    float metallic = data->materials[i].pbr_metallic_roughness.metallic_factor;
-                    model.materials[j].maps[MATERIAL_MAP_METALNESS].value = metallic;
+                    
                 }
+
+                // Load metallic/roughness material properties
+                float roughness = data->materials[i].pbr_metallic_roughness.roughness_factor;
+                model.materials[j].maps[MATERIAL_MAP_ROUGHNESS].value = roughness;
+
+                float metallic = data->materials[i].pbr_metallic_roughness.metallic_factor;
+                model.materials[j].maps[MATERIAL_MAP_METALNESS].value = metallic;
+                
+                TraceLog(LOG_DEBUG, "Asset Roughness factor: %f\nAsset Metal Factor: %f", roughness, metallic);
 
                 // Load normal texture
                 if (data->materials[i].normal_texture.texture)
