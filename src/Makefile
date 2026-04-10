@@ -85,7 +85,7 @@ RAYLIB_LIBTYPE       ?= STATIC
 RAYLIB_BUILD_MODE    ?= RELEASE
 
 # Build output name for the library
-RAYLIB_LIB_NAME      ?= raylib
+RAYLIB_LIB_NAME      ?= raylibWin
 
 # Define resource file for DLL properties
 RAYLIB_RES_FILE      ?= ./raylib.dll.rc.data
