@@ -5540,7 +5540,6 @@ static void LoadAttachments(Model *model, cgltf_node *node)
     char emptyExt[] = "_ATTACHMENT";
     if (strlen(emptyExt) >= fullNameLen)
     {
-        TRACELOG(LOG_ERROR, "Not an attachment"); 
         nodeIsAttachment = 0;
     }
 
@@ -5595,7 +5594,6 @@ static void LoadAttachments(Model *model, cgltf_node *node)
                 }
             }
         }
-        TRACELOG(LOG_INFO, "Added Empty \"%s\" to model", e.name);
         model->empties[model->emptyCount - 1] = e;
     }
 
@@ -5774,7 +5772,6 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                 float metallic = data->materials[i].pbr_metallic_roughness.metallic_factor;
                 model.materials[j].maps[MATERIAL_MAP_METALNESS].value = metallic;
                 
-                TraceLog(LOG_DEBUG, "Asset Roughness factor: %f\nAsset Metal Factor: %f", roughness, metallic);
 
                 // Load normal texture
                 if (data->materials[i].normal_texture.texture)
@@ -5815,7 +5812,7 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                 model.materials[j].maps[MATERIAL_MAP_EMISSION].color.g = (unsigned char)(data->materials[i].emissive_factor[1] * 255);
                 model.materials[j].maps[MATERIAL_MAP_EMISSION].color.b = (unsigned char)(data->materials[i].emissive_factor[2] * 255);
                 model.materials[j].maps[MATERIAL_MAP_EMISSION].color.a = 255;
-                model.materials[j].maps[MATERIAL_MAP_EMISSION].value   = (float)(data->materials[i].emissive_strength.emissive_strength); 
+                model.materials[j].maps[MATERIAL_MAP_EMISSION].value   = 1.0f; 
             }
 
             // Other possible materials not supported by raylib pipeline:
@@ -6563,7 +6560,6 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
         {
             cgltf_scene *scene = &data->scenes[i];
 
-            TRACELOG(LOG_INFO, "    > Scene %d node count: %i", i, scene->nodes_count);
             for (int j = 0; j < scene->nodes_count; j++)
             {
                 cgltf_node *node = scene->nodes[j];
