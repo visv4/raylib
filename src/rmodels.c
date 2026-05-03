@@ -5743,19 +5743,28 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                         imMetallic.format = imRoughness.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE;
                         imMetallic.mipmaps = imRoughness.mipmaps = 1;
 
+                        bool hasRough = false;
+                        bool hasMetal = false;
+
                         for (int x = 0; x < imRoughness.width; x++)
                         {
                             for (int y = 0; y < imRoughness.height; y++)
                             {
                                 Color color = GetImageColor(imMetallicRoughness, x, y);
 
+                                if (color.g > 0){
+                                    hasRough = true;
+                                }
+                                if (color.b > 0){
+                                    hasMetal = true;
+                                }
                                 ((unsigned char *)imRoughness.data)[y * imRoughness.width + x] = color.g; // Roughness color channel
                                 ((unsigned char *)imMetallic.data)[y * imMetallic.width + x] = color.b;   // Metallic color channel
                             }
                         }
 
-                        model.materials[j].maps[MATERIAL_MAP_ROUGHNESS].texture = LoadTextureFromImage(imRoughness);
-                        model.materials[j].maps[MATERIAL_MAP_METALNESS].texture = LoadTextureFromImage(imMetallic);
+                        model.materials[j].maps[MATERIAL_MAP_ROUGHNESS].texture = hasRough ? LoadTextureFromImage(imRoughness) : (Texture){0};
+                        model.materials[j].maps[MATERIAL_MAP_METALNESS].texture = hasMetal ? LoadTextureFromImage(imMetallic)  : (Texture){0};
 
                         UnloadImage(imRoughness);
                         UnloadImage(imMetallic);
