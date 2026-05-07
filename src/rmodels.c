@@ -5763,6 +5763,14 @@ Model LoadModelFromMemory(const char *fileName, const char* glTFData, const int 
                             }
                         }
 
+                        if (hasRough){
+                            TraceLog(LOG_DEBUG, "Material has Roughness Texture");
+                        }
+
+                        if (hasMetal){
+                            TraceLog(LOG_DEBUG, "Material has Metal Texture");
+                        }
+
                         model.materials[j].maps[MATERIAL_MAP_ROUGHNESS].texture = hasRough ? LoadTextureFromImage(imRoughness) : (Texture){0};
                         model.materials[j].maps[MATERIAL_MAP_METALNESS].texture = hasMetal ? LoadTextureFromImage(imMetallic)  : (Texture){0};
 
