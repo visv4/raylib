@@ -5517,9 +5517,22 @@ void UpdateEmpties(Model *model)
         // 1. Get Raylib's final rendering matrix for this specific bone
         Matrix gpuMat = model->meshes[0].boneMatrices[boneId];
 
+        Matrix correction = MatrixIdentity();
+
+
+        TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE UPDATING EMPTY %s", e->name);
+        if (strstr(e->name, "ARM") != NULL)
+        {   
+            TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE ROTATING");
+            // Apply the fix ONLY to hand attachments
+            correction = MatrixRotateXYZ((Vector3){ 0.0f, 0.0f, -90.0f * DEG2RAD });
+        }
+
         // 2. Apply the animated bone to the Empty's original rest position
         // (This moves the Empty from 'T-Pose' into the current animated frame)
-        Matrix animMat = MatrixMultiply(e->restTransform, gpuMat);
+        Matrix animMat = MatrixMultiply(correction, e->restTransform);
+
+        animMat = MatrixMultiply(animMat, gpuMat);
 
         // 3. Apply the base model transform to fix glTF 90-degree axis swizzles
         e->globalTransform = MatrixMultiply(animMat, model->transform);
