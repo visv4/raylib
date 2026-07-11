@@ -5520,12 +5520,12 @@ void UpdateEmpties(Model *model)
         Matrix correction = MatrixIdentity();
 
 
-        TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE UPDATING EMPTY %s", e->name);
+        //TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE UPDATING EMPTY %s", e->name);
         if (strstr(e->name, "ARM") != NULL)
         {   
-            TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE ROTATING");
+            //TraceLog(LOG_INFO, " HELLO HELLO HELLO WE ARE ROTATING");
             // Apply the fix ONLY to hand attachments
-            correction = MatrixRotateXYZ((Vector3){ 0.0f, 0.0f, -90.0f * DEG2RAD });
+            correction = MatrixRotateXYZ((Vector3){ -90.0f * DEG2RAD, 0.0f, -90.0f * DEG2RAD });
         }
 
         // 2. Apply the animated bone to the Empty's original rest position
